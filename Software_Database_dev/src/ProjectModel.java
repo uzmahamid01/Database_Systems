@@ -5,16 +5,16 @@ public class ProjectModel {
     private int projNum;
     private String projName;
     private int projLeader;
-    private Map<Integer, Double> employeeHoursBilled; // Map to store employee ID and billed hours
+    private Map<Integer, Double> assignments; // Map<EmployeeID, HoursBilled>
 
     public ProjectModel(int projNum, String projName, int projLeader) {
         this.projNum = projNum;
         this.projName = projName;
         this.projLeader = projLeader;
-        this.employeeHoursBilled = new HashMap<>();
+        this.assignments = new HashMap<>();
     }
 
-    // Getters and Setters
+    // Getters and setters
     public int getProjNum() {
         return projNum;
     }
@@ -39,21 +39,49 @@ public class ProjectModel {
         this.projLeader = projLeader;
     }
 
-    public Map<Integer, Double> getEmployeeHoursBilled() {
-        return employeeHoursBilled;
+    //to add assignment
+    public void addAssignment(int employeeId, double hoursBilled) {
+        assignments.put(employeeId, hoursBilled);
     }
 
-    public void setEmployeeHoursBilled(Map<Integer, Double> employeeHoursBilled) {
-        this.employeeHoursBilled = employeeHoursBilled;
+    //to remove assignment
+    public void removeAssignment(int employeeId) {
+        assignments.remove(employeeId);
     }
 
-    // Method to add employee and billed hours to the project
-    public void addEmployeeHours(int empID, double hoursBilled) {
-        employeeHoursBilled.put(empID, hoursBilled);
+    //to get total billed hours for a project
+    public double getTotalBilledHours() {
+        double totalHours = 0;
+        for (double hours : assignments.values()) {
+            totalHours += hours;
+        }
+        return totalHours;
     }
 
-    // Method to remove employee from the project
-    public void removeEmployee(int empID) {
-        employeeHoursBilled.remove(empID);
+    //to get total charge for a project
+    public double getTotalCharge(double wage) {
+        return getTotalBilledHours() * wage;
+    }
+
+    //to get assignments map
+    public Map<Integer, Double> getAssignments() {
+        return assignments;
+    }
+
+    //to set assignments map
+    public void setAssignments(Map<Integer, Double> assignments) {
+        this.assignments = assignments;
+    }
+
+    @Override
+    public String toString() {
+        return "ProjectModel{" +
+                "projNum=" + projNum +
+                ", projName='" + projName + '\'' +
+                ", projLeader=" + projLeader +
+                ", assignments=" + assignments +
+                '}';
     }
 }
+
+

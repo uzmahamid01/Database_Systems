@@ -9,12 +9,10 @@ public class MainWindow extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // Create buttons
         JButton jobClassButton = new JButton("Job Class");
         JButton employeeButton = new JButton("Employee Class");
         JButton projectButton = new JButton("Project Class");
 
-        // Add action listeners to buttons
         jobClassButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 openJobClassView();
@@ -73,57 +71,3 @@ public class MainWindow extends JFrame {
 
 
 
-
-
-// import javax.swing.*;
-// import java.awt.*;
-// import java.awt.event.ActionEvent;
-// import java.awt.event.ActionListener;
-
-// public class MainWindow extends JFrame {
-//     public MainWindow() {
-//         setTitle("Main Window");
-//         setSize(300, 200);
-//         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//         setLocationRelativeTo(null);
-
-//         JPanel panel = new JPanel();
-//         panel.setLayout(new GridLayout(2, 1));
-
-//         JButton jobClassButton = new JButton("JobClass");
-//         jobClassButton.addActionListener(new ActionListener() {
-//             @Override
-//             public void actionPerformed(ActionEvent e) {
-//                 JobClassView jobClassView = new JobClassView();
-//                 jobClassView.setVisible(true);
-//             }
-//         });
-
-//         JButton employeeButton = new JButton("Employee");
-//         employeeButton.addActionListener(new ActionListener() {
-//             @Override
-//             public void actionPerformed(ActionEvent e) {
-//                 EmployeeClassView employeeView = new EmployeeClassView();
-//                 employeeView.setVisible(true);
-//             }
-//         });
-
-//         panel.add(jobClassButton);
-//         panel.add(employeeButton);
-
-//         add(panel);
-//         setVisible(true);
-
-        
-//     }
-
-    
-
-//     public static void main(String[] args) {
-//         SwingUtilities.invokeLater(new Runnable() {
-//             public void run() {
-//                 new MainWindow();
-//             }
-//         });
-//     }
-// }

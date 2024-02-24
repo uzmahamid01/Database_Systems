@@ -1,13 +1,13 @@
 public class JobModel {
     public int jobClassID;
     public String jobName;
-    public double wage;
+    public static double wage;
     
     //constructor:
     public JobModel(int jobClassID, String jobName, double wage) {
         this.jobClassID = jobClassID;
         this.jobName = jobName;
-        this.wage = wage;
+        JobModel.wage = wage;
 
     }
     
@@ -32,7 +32,7 @@ public class JobModel {
     }
 
     public void setWage(double wage) {
-        this.wage = wage;
+        JobModel.wage = wage;
     }
 
 }

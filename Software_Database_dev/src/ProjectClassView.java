@@ -1,244 +1,234 @@
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Map;
-import java.util.Vector;
+import java.util.List;
 
 public class ProjectClassView extends JFrame {
-    private JTextField projNumField;
-    private JTextField projNameField;
-    private JTextField projLeaderField;
-    private JTable employeeTable;
-    private DefaultTableModel tableModel;
-    private JButton addButton;
-    private JButton saveButton;
+    private JLabel lblProjNum, lblProjName, lblProjLeader;
+    private JTextField txtProjNum, txtProjName, txtProjLeader;
+    private JButton btnAddUpdate, btnViewEdit, btnAddEmployee;
+    private JTable tblEmployees;
+    private DefaultTableModel tblModel;
+    private DataAccess dataAccess;
 
     public ProjectClassView() {
-        setTitle("Project Management");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("Project Management System");
         setSize(600, 400);
-        initComponents();
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
-        add(createInputPanel(), BorderLayout.NORTH);
-        add(new JScrollPane(employeeTable), BorderLayout.CENTER);
-        add(createButtonPanel(), BorderLayout.SOUTH);
+
+        lblProjNum = new JLabel("Project Number:");
+        lblProjName = new JLabel("Project Name:");
+        lblProjLeader = new JLabel("Project Leader:");
+
+        txtProjNum = new JTextField(10);
+        txtProjName = new JTextField(10);
+        txtProjLeader = new JTextField(10);
+
+        btnAddUpdate = new JButton("Add/Update Project");
+        btnViewEdit = new JButton("View/Edit Project");
+        btnAddEmployee = new JButton("Add Employee to Project");
+
+        tblModel = new DefaultTableModel();
+        tblModel.addColumn("Employee ID");
+        tblModel.addColumn("Employee Name");
+        tblModel.addColumn("Hours Billed");
+        tblModel.addColumn("Wages");
+        //tblModel.addColumn("Calculated Wages");
+        
+
+        tblEmployees = new JTable(tblModel);
+
+        JPanel pnlInput = new JPanel(new GridLayout(3, 2));
+        pnlInput.add(lblProjNum);
+        pnlInput.add(txtProjNum);
+        pnlInput.add(lblProjName);
+        pnlInput.add(txtProjName);
+        pnlInput.add(lblProjLeader);
+        pnlInput.add(txtProjLeader);
+
+        JPanel pnlButtons = new JPanel(new FlowLayout());
+        pnlButtons.add(btnAddUpdate);
+        pnlButtons.add(btnViewEdit);
+        pnlButtons.add(btnAddEmployee);
+
+        add(pnlInput, BorderLayout.NORTH);
+        add(new JScrollPane(tblEmployees), BorderLayout.CENTER);
+        add(pnlButtons, BorderLayout.SOUTH);
+
+        dataAccess = new DataAccess();
+
+        btnAddUpdate.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int projNum = Integer.parseInt(txtProjNum.getText());
+                String projName = txtProjName.getText();
+                int projLeader = Integer.parseInt(txtProjLeader.getText());
+                ProjectModel project = new ProjectModel(projNum, projName, projLeader);
+                dataAccess.createProject(project);
+                
+                refreshTable();
+            }
+        });
+
+        btnViewEdit.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int projNum = Integer.parseInt(txtProjNum.getText());
+                ProjectModel project = dataAccess.readProject(projNum);
+                if (project != null) {
+                    
+                    txtProjName.setText(project.getProjName());
+                    txtProjLeader.setText(Integer.toString(project.getProjLeader()));
+
+                    
+                    tblModel.setRowCount(0);
+
+                    
+                    List<AssignmentModel> assignments = dataAccess.getAssignmentsForProject(project.getProjNum());
+                    for (AssignmentModel assignment : assignments) {
+                        EmployeeModel employee = dataAccess.readEmployee(assignment.getEmpID());
+                        double wage = employee != null ? employee.getJob().getWage() : 0.0;
+                        tblModel.addRow(new Object[]{
+                                assignment.getEmpID(),
+                                employee != null ? employee.getEmpName() : "",
+                                assignment.getHoursBilled(),
+                                wage,
+                                assignment.getTotalCharge(),
+                                assignment.getHoursBilled() * wage
+                        });
+                    }
+
+                } else {
+                    JOptionPane.showMessageDialog(ProjectClassView.this, "Failed to retrieve project details.", "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        btnAddEmployee.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                AddEmployeeDialog addEmployeeDialog = new AddEmployeeDialog(ProjectClassView.this);
+                addEmployeeDialog.setVisible(true);
+            }
+        });
+
     }
 
-    private void initComponents() {
-        projNumField = new JTextField(10);
-        projNameField = new JTextField(20);
-        projLeaderField = new JTextField(10);
-        String[] columnNames = {"Employee ID", "Employee Name", "Billed Hours"};
-        tableModel = new DefaultTableModel(columnNames, 0);
-        employeeTable = new JTable(tableModel);
-        addButton = new JButton("Add Employee");
-        saveButton = new JButton("Save");
-        saveButton.setEnabled(false); // Disable save button initially
+    private void refreshTable() {
+        
+        tblModel.setRowCount(0);
+
+        
+        int projNum = Integer.parseInt(txtProjNum.getText());
+        List<AssignmentModel> assignments = dataAccess.getAssignmentsForProject(projNum);
+        for (AssignmentModel assignment : assignments) {
+            EmployeeModel employee = dataAccess.readEmployee(assignment.getEmpID());
+            double wage = employee != null ? employee.getJob().getWage() : 0.0;
+            tblModel.addRow(new Object[]{
+                    assignment.getEmpID(),
+                    employee != null ? employee.getEmpName() : "",
+                    assignment.getHoursBilled(),
+                    wage,
+                    assignment.getTotalCharge(),
+            });
+        }
     }
 
-    private JPanel createInputPanel() {
-        JPanel inputPanel = new JPanel(new GridLayout(3, 2));
-        inputPanel.add(new JLabel("Project Number:"));
-        inputPanel.add(projNumField);
-        inputPanel.add(new JLabel("Project Name:"));
-        inputPanel.add(projNameField);
-        inputPanel.add(new JLabel("Project Leader:"));
-        inputPanel.add(projLeaderField);
-        return inputPanel;
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                new ProjectClassView().setVisible(true);
+            }
+        });
     }
 
-    private JPanel createButtonPanel() {
-        JPanel buttonPanel = new JPanel();
-        buttonPanel.add(addButton);
-        buttonPanel.add(saveButton);
-        return buttonPanel;
-    }
+    private class AddEmployeeDialog extends JDialog {
+        private JLabel lblEmpNum, lblEmpName, lblProjNum, lblHoursBilled;
+        private JTextField txtEmpNum, txtEmpName, txtProjNum, txtHoursBilled;
+        private JButton btnSave, btnCancel;
 
-    public void addAddButtonListener(ActionListener listener) {
-        addButton.addActionListener(listener);
-    }
+        public AddEmployeeDialog(JFrame parent) {
+            super(parent, "Add Employee to Project", true);
+            setSize(300, 200);
+            setLocationRelativeTo(parent);
+            setLayout(new GridLayout(5, 2));
 
-    public void addSaveButtonListener(ActionListener listener) {
-        saveButton.addActionListener(listener);
+            lblEmpNum = new JLabel("Employee Number:");
+            lblEmpName = new JLabel("Employee Name:");
+            lblProjNum = new JLabel("Project Number:");
+            lblHoursBilled = new JLabel("Hours Billed:");
+
+            txtEmpNum = new JTextField();
+            txtEmpName = new JTextField();
+            txtProjNum = new JTextField();
+            txtHoursBilled = new JTextField();
+
+            btnSave = new JButton("Save");
+            btnCancel = new JButton("Cancel");
+
+            add(lblEmpNum);
+            add(txtEmpNum);
+            add(lblEmpName);
+            add(txtEmpName);
+            add(lblProjNum);
+            add(txtProjNum);
+            add(lblHoursBilled);
+            add(txtHoursBilled);
+            add(btnSave);
+            add(btnCancel);
+
+            btnSave.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    int empNum = Integer.parseInt(txtEmpNum.getText());
+                    //String empName = txtEmpName.getText();
+                    int projNum = Integer.parseInt(txtProjNum.getText());
+                    double hoursBilled = Double.parseDouble(txtHoursBilled.getText());
+                    
+                    
+                    
+                    EmployeeModel employee = dataAccess.readEmployee(empNum);
+                    if (employee != null) {
+                        double wage = employee.getJob().getWage();
+                        double totalCharge = hoursBilled * wage; 
+                    
+                        tblModel.addRow(new Object[]{
+                                empNum,
+                                employee.getEmpName(),
+                                hoursBilled,
+                                wage,
+                                hoursBilled * wage
+                        });
+            
+                        AssignmentModel assignment = new AssignmentModel(empNum, projNum, hoursBilled, totalCharge);
+                        dataAccess.createAssignment(assignment);
+
+                        
+                        
+                        refreshTable();
+                    } else {
+                        
+                        JOptionPane.showMessageDialog(AddEmployeeDialog.this, "Employee not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+            
+                    dispose(); 
+                }
+            });
+            
+
+            btnCancel.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent e) {
+                    dispose(); 
+                }
+            });
+        }
     }
     
-
-    public void enableSaveButton(boolean enable) {
-        saveButton.setEnabled(enable);
-    }
-
-    // Method to add a row to the employee table
-    public void addEmployeeRow(Vector<Object> row) {
-        tableModel.addRow(row);
-        JOptionPane.showMessageDialog(this, "Employee added successfully.");
-        // Reset text boxes
-        projNumField.setText("");
-        projNameField.setText("");
-        projLeaderField.setText("");
-    }
-
-
-    // Method to clear all rows from the employee table
-    public void clearEmployeeTable() {
-        tableModel.setRowCount(0);
-    }
-
-    // Method to get project number from the input field
-    public int getProjectNumber() {
-        return Integer.parseInt(projNumField.getText());
-    }
-
-    // Method to get project name from the input field
-    public String getProjectName() {
-        return projNameField.getText();
-    }
-
-    // Method to get project leader from the input field
-    public int getProjectLeader() {
-        return Integer.parseInt(projLeaderField.getText());
-    }
-
-    // Method to get selected employee ID from the table
-    public int getSelectedEmployeeID() {
-        int selectedRow = employeeTable.getSelectedRow();
-        if (selectedRow != -1) {
-            return (int) tableModel.getValueAt(selectedRow, 0);
-        }
-        return -1;
-    }
-
-    // Method to get billed hours entered by the user
-    public double getBilledHours() {
-        while (true) {
-            String input = JOptionPane.showInputDialog(this, "Enter billed hours:");
-            if (input != null) {
-                try {
-                    double billedHours = Double.parseDouble(input);
-                    if (billedHours >= 0) {
-                        return billedHours;
-                    } else {
-                        JOptionPane.showMessageDialog(this, "Invalid input. Billed hours must be a non-negative number.");
-                    }
-                } catch (NumberFormatException e) {
-                    JOptionPane.showMessageDialog(this, "Invalid input. Please enter a valid number.");
-                }
-            } else {
-                // User clicked cancel, return a negative value to indicate cancel
-                return -1;
-            }
-        }
-    }
-
-    /// Method to display assigned employees with their billed hours
-    public void displayAssignedEmployees(Map<Integer, Double> employeeHoursMap) {
-        clearEmployeeTable();
-        for (Map.Entry<Integer, Double> entry : employeeHoursMap.entrySet()) {
-            int empID = entry.getKey();
-            double billedHours = entry.getValue();
-            // Fetch employee details from the database based on empID
-            // Here, you should query the database to get the employee name based on empID
-            String employeeName = DataAccess.getEmployeeNameFromDatabase(empID);
-            // Add employee details to the table
-            Vector<Object> row = new Vector<>();
-            row.add(empID);
-            row.add(employeeName);
-            row.add(billedHours);
-            addEmployeeRow(row);
-        }
-    }
-
 }
 
 
-
-
-
-// import javax.swing.*;
-// import java.awt.*;
-// import java.awt.event.ActionEvent;
-// import java.awt.event.ActionListener;
-
-// public class ProjectClassView extends JFrame {
-//     private JTextField projNumField;
-//     private JTextField projNameField;
-//     private JTextField projLeaderField;
-//     private JButton addButton;
-//     private JButton updateButton;
-
-//     public ProjectClassView() {
-//         setTitle("Project Management");
-//         setSize(400, 200);
-//         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-//         JPanel panel = new JPanel();
-//         panel.setLayout(new GridLayout(4, 2));
-
-//         JLabel projNumLabel = new JLabel("Project Number:");
-//         projNumField = new JTextField();
-//         panel.add(projNumLabel);
-//         panel.add(projNumField);
-
-//         JLabel projNameLabel = new JLabel("Project Name:");
-//         projNameField = new JTextField();
-//         panel.add(projNameLabel);
-//         panel.add(projNameField);
-
-//         JLabel projLeaderLabel = new JLabel("Project Leader:");
-//         projLeaderField = new JTextField();
-//         panel.add(projLeaderLabel);
-//         panel.add(projLeaderField);
-
-//         addButton = new JButton("Add");
-//         updateButton = new JButton("Update");
-
-//         panel.add(addButton);
-//         panel.add(updateButton);
-
-//         addButton.addActionListener(new ActionListener() {
-//             @Override
-//             public void actionPerformed(ActionEvent e) {
-//                 // Call controller method to add project
-//                 addProject();
-//             }
-//         });
-
-//         updateButton.addActionListener(new ActionListener() {
-//             @Override
-//             public void actionPerformed(ActionEvent e) {
-//                 // Call controller method to update project
-//                 updateProject();
-//             }
-//         });
-
-//         add(panel);
-//         setVisible(true);
-//     }
-
-//     private void addProject() {
-//         // Get data from text fields and pass it to controller to add project
-//         int projNum = Integer.parseInt(projNumField.getText());
-//         String projName = projNameField.getText();
-//         int projLeader = Integer.parseInt(projLeaderField.getText());
-//         // Call controller method to add project with provided data
-//         // Controller.addProject(projNum, projName, projLeader);
-//     }
-
-//     private void updateProject() {
-//         // Get data from text fields and pass it to controller to update project
-//         int projNum = Integer.parseInt(projNumField.getText());
-//         String projName = projNameField.getText();
-//         int projLeader = Integer.parseInt(projLeaderField.getText());
-//         // Call controller method to update project with provided data
-//         // Controller.updateProject(projNum, projName, projLeader);
-//     }
-
-//     public static void main(String[] args) {
-//         SwingUtilities.invokeLater(new Runnable() {
-//             @Override
-//             public void run() {
-//                 new ProjectClassView();
-//             }
-//         });
-//     }
-// }

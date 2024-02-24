@@ -1,11 +1,14 @@
 import java.sql.*;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class DataAccess {
     private static final String URL = "jdbc:mysql://localhost:3306/uzma";
     private static final String USER = "root";
     private static final String PASSWORD = "masternode";
 
+    //JobModel
     public static void createJobClass(JobModel job) {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
         PreparedStatement statement = connection.prepareStatement("INSERT INTO JobClass (JobCLassID, JobName, Wage) VALUES (?, ?, ?)")){
@@ -58,6 +61,8 @@ public class DataAccess {
             e.printStackTrace();
         }
     }
+
+    //EMployee Model
     public static void createEmployee(EmployeeModel employee) {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement statement = connection.prepareStatement("INSERT INTO Employee (EmpNum, EmpName, JobClassID) VALUES (?, ?, ?)")) {
@@ -70,7 +75,7 @@ public class DataAccess {
         }
     }
 
-    public static EmployeeModel readEmployee(int empNum) {
+    public EmployeeModel readEmployee(int empNum) {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement statement = connection.prepareStatement("SELECT * FROM Employee WHERE EmpNum = ?")) {
             statement.setInt(1, empNum);
@@ -109,39 +114,26 @@ public class DataAccess {
         }
     }
 
-
-    //For projectClass
-    public static void createProject(ProjectModel project) {
+    //ProjectModel
+    public void createProject(ProjectModel project) {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement statement = connection.prepareStatement("INSERT INTO Project (ProjNum, ProjName, ProjLeader) VALUES (?, ?, ?)")) {
             statement.setInt(1, project.getProjNum());
             statement.setString(2, project.getProjName());
             statement.setInt(3, project.getProjLeader());
             statement.executeUpdate();
-
-
-            //insert task assignment for the project
-            for (Map.Entry<Integer, Double> entry : project.getEmployeeHoursBilled().entrySet()) {
-                int empID = entry.getKey();
-                double hoursBilled = entry.getValue();
-                createAssignment(connection, project.getProjNum(), empID, hoursBilled);
-            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
-    public static ProjectModel readProject(int projNum) {
+    
+    public ProjectModel readProject(int projNum) {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement statement = connection.prepareStatement("SELECT * FROM Project WHERE ProjNum = ?")) {
             statement.setInt(1, projNum);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
-                    int projLeader = resultSet.getInt("ProjLeader");
-                    ProjectModel project = new ProjectModel(projNum, resultSet.getString("ProjName"), projLeader);
-                    // Load task assignments for the project
-                    loadAssignments(connection, project);
-                    return project;
+                    return new ProjectModel(resultSet.getInt("ProjNum"), resultSet.getString("ProjName"), resultSet.getInt("ProjLeader"));
                 }
             }
         } catch (SQLException e) {
@@ -149,88 +141,125 @@ public class DataAccess {
         }
         return null;
     }
-
+    
     public static void updateProject(ProjectModel project) {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement statement = connection.prepareStatement("UPDATE Project SET ProjName = ?, ProjLeader = ? WHERE ProjNum = ?")) {
-                statement.setString(1, project.getProjName());
-                statement.setInt(2, project.getProjLeader());
-                statement.setInt(3, project.getProjNum());
-                statement.executeUpdate();
-
-                //update task assignments for the project
-                deleteAssignments(connection, project.getProjNum());
-                for (Map.Entry<Integer, Double> entry : project.getEmployeeHoursBilled().entrySet()) {
-                    int empID = entry.getKey();
-                    double hoursBilled = entry.getValue();
-                    createAssignment(connection, project.getProjNum(), empID, hoursBilled);
-                }
-
+            statement.setString(1, project.getProjName());
+            statement.setInt(2, project.getProjLeader());
+            statement.setInt(3, project.getProjNum());
+            statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-
+    
     public static void deleteProject(int projNum) {
         try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
              PreparedStatement statement = connection.prepareStatement("DELETE FROM Project WHERE ProjNum = ?")) {
             statement.setInt(1, projNum);
             statement.executeUpdate();
-            // Also delete task assignments for the project
-            deleteAssignments(connection, projNum);
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    // Helper method to create task assignments for a project
-    private static void createAssignment(Connection connection, int projNum, int empID, double hoursBilled) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO Assignment (EmpID, ProjID, HoursBilled) VALUES (?, ?, ?)")) {
-            statement.setInt(1, empID);
+    public static double getHoursBilledForEmployeeOnProject(int empNum, int projNum) {
+        double hoursBilled = 0.0;
+        String query = "SELECT HoursBilled FROM Assignment WHERE EmpID = ? AND ProjID = ?";
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, empNum);
             statement.setInt(2, projNum);
-            statement.setDouble(3, hoursBilled);
-            statement.executeUpdate();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (resultSet.next()) {
+                    hoursBilled = resultSet.getDouble("HoursBilled");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        return hoursBilled;
     }
 
-    // Helper method to load task assignments for a project
-    private static void loadAssignments(Connection connection, ProjectModel project) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("SELECT * FROM Assignment WHERE ProjID = ?")) {
-            statement.setInt(1, project.getProjNum());
+    public static List<EmployeeModel> getEmployeesForProject(int projNum) {
+        List<EmployeeModel> employees = new ArrayList<>();
+        String query = "SELECT * FROM Employee INNER JOIN Assignment ON Employee.EmpNum = Assignment.EmpID WHERE Assignment.ProjID = ?";
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+            PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, projNum);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    int empNum = resultSet.getInt("EmpNum");
+                    String empName = resultSet.getString("EmpName");
+                    int jobClassID = resultSet.getInt("JobClassID");
+                    JobModel job = readJobClass(jobClassID);
+                    employees.add(new EmployeeModel(empNum, empName, job));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return employees;
+    }
+
+    public List<AssignmentModel> getAssignmentsForProject(int projNum) {
+        List<AssignmentModel> assignments = new ArrayList<>();
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement statement = connection.prepareStatement("SELECT * FROM Assignment WHERE ProjID = ?")) {
+            statement.setInt(1, projNum);
             try (ResultSet resultSet = statement.executeQuery()) {
                 while (resultSet.next()) {
                     int empID = resultSet.getInt("EmpID");
                     double hoursBilled = resultSet.getDouble("HoursBilled");
-                    project.addEmployeeHours(empID, hoursBilled);
-                }
-            }
-        }
-    }
-
-    // Helper method to delete task assignments for a project
-    private static void deleteAssignments(Connection connection, int projNum) throws SQLException {
-        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM Assignment WHERE ProjID = ?")) {
-            statement.setInt(1, projNum);
-            statement.executeUpdate();
-        }
-    }
-    // Method to get employee name from the database based on empID
-    public static String getEmployeeNameFromDatabase(int empID) {
-        String employeeName = null;
-        String query = "SELECT EmpName FROM Employee WHERE EmpNum = ?";
-        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, empID);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                if (resultSet.next()) {
-                    employeeName = resultSet.getString("EmpName");
+                    double totalCharge = resultSet.getDouble("TotalCharge");
+                    assignments.add(new AssignmentModel(empID, projNum, hoursBilled, totalCharge));
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return employeeName;
+        return assignments;
     }
 
+    public void createAssignment(AssignmentModel assignment) {
+        try (Connection connection = DriverManager.getConnection(URL, USER, PASSWORD);
+             PreparedStatement statement = connection.prepareStatement("INSERT INTO Assignment (EmpID, ProjID, HoursBilled) VALUES (?, ?, ?)")) {
+            statement.setInt(1, assignment.getEmpID());
+            statement.setInt(2, assignment.getProjID());
+            statement.setDouble(3, assignment.getHoursBilled());
+    
+            statement.executeUpdate();
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public List<ProjectModel> getAllProjects() {
+        List<ProjectModel> projects = new ArrayList<>();
+
+        try(Connection connection = DriverManager.getConnection(URL, USER, PASSWORD)){
+            Statement statement = connection.createStatement();
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM projects");
+
+            while (resultSet.next()) {
+                int projNum = resultSet.getInt("projNum");
+                String projName = resultSet.getString("projName");
+                int projLeader = resultSet.getInt("projLeader");
+
+                ProjectModel project = new ProjectModel(projNum, projName, projLeader);
+                projects.add(project);
+            }
+
+            resultSet.close();
+            statement.close();
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return projects;
+    }
     
 }

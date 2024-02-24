@@ -1,10 +1,10 @@
+
 public class EmployeeModel {
     public int empNum;
     public String empName;
     public JobModel job;
 
     //constructor:
-
     public EmployeeModel(int empNum, String empName, JobModel job) {
         this.empNum = empNum;
         this.empName = empName;
@@ -28,6 +28,9 @@ public class EmployeeModel {
     }
     public void setJob(JobModel job){
         this.job = job;
+    }
+    public static double getTotalCharge(double hoursBilled, double wage) {
+        return hoursBilled * JobModel.wage; 
     }
 
 }

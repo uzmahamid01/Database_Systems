@@ -59,4 +59,5 @@ public class EmployeeClassView extends JFrame {
         add(panel);
         setVisible(true);
     }
+    
 }
