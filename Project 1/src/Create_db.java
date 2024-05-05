@@ -14,8 +14,8 @@ import java.util.Random;
 public class Create_db {
     // JDBC URL, username, and password of MySQL server
     private static final String URL = "jdbc:mysql://localhost:3306/storemanagement";
-    private static final String USER = "root";
-    private static final String PASSWORD = "masternode";
+    private static final String USER = "";
+    private static final String PASSWORD = "";
 
     private static Connection connection;
     private static Statement statement;

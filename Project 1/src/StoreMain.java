@@ -17,8 +17,8 @@ import java.io.IOException;
 
 public class StoreMain extends JFrame {
     private static final String URL = "jdbc:mysql://localhost:3306/storemanagement";
-    private static final String USER = "root";
-    private static final String PASSWORD = "masternode";
+    private static final String USER = "";
+    private static final String PASSWORD = "";
     private DataAccess dataAccess;
 
     public StoreMain(DataAccess dataAccess) {

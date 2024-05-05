@@ -6,8 +6,7 @@ import java.util.Random;
 public class Main {
     public static void main(String[] args) {
         // Connect to Redis
-        //Jedis jedis = new Jedis("redis://default:ncjQgvh2VkfmQLoRMfawveEb0fsBzErJ@redis-11998.c12.us-east-1-4.ec2.redns.redis-cloud.com:11998");
-        Jedis jedis = new Jedis("redis://default:fw0QQB3zs4dE0SVfUkbJ29SzkBsXNEdR@redis-16046.c266.us-east-1-3.ec2.redns.redis-cloud.com:16046");
+        Jedis jedis = new Jedis("");
         
         try {
             // Drop existing keys if they exist

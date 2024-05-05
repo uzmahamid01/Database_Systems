@@ -12,9 +12,7 @@ public class DataAdapter {
     
     public DataAdapter() {
         // Establish connection to Redis server
-        //this.jedis = new Jedis("localhost", 6379);
-        //jedis = new Jedis("redis://default:ncjQgvh2VkfmQLoRMfawveEb0fsBzErJ@redis-11998.c12.us-east-1-4.ec2.redns.redis-cloud.com:11998");
-        jedis = new Jedis("redis://default:fw0QQB3zs4dE0SVfUkbJ29SzkBsXNEdR@redis-16046.c266.us-east-1-3.ec2.redns.redis-cloud.com:16046");
+        jedis = new Jedis("");
     }
 
     //add a user

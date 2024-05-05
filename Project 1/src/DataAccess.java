@@ -6,8 +6,8 @@ import java.sql.SQLException;
 public class DataAccess {
     private Connection connection;
     private static final String URL = "jdbc:mysql://localhost:3306/storemanagement";
-    private static final String USER = "root";
-    private static final String PASSWORD = "masternode";
+    private static final String USER = "";
+    private static final String PASSWORD = "";
 
     public DataAccess(Connection connection) {
         this.connection = connection;
