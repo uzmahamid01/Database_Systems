@@ -1,6 +1,10 @@
 {
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin",
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
+        "/Users/master-node/Downloads/mysql-connector-j-8.3.0/**/*.jar",
+        "/Users/master-node/Desktop/mysql-connector-j-8.3.0 2/**/*.jar",
         "/Users/master-node/Desktop/CSCE 310 - DS/mysql-connector-j-8.3.0 2/**/*.jar",
         "/Users/master-node/Desktop/CSCE 310/mysql-connector-j-8.3.0 2/**/*.jar"
     ]
